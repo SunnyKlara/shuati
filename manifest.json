@@ -1,0 +1,16 @@
+{
+  "name": "机器人视觉 · 刷题",
+  "short_name": "刷题",
+  "description": "智能机器人视觉挑战赛速通刷题系统",
+  "start_url": "/shuati/",
+  "display": "standalone",
+  "background_color": "#f6f6f6",
+  "theme_color": "#1677ff",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
