@@ -616,6 +616,7 @@ function renderStudyHome() {
             <div class="list-item" onclick="showTutorial('formulas')"><div class="left"><div class="icon">📐</div><div><div class="title">公式速查手册</div><div class="desc">所有计算题涉及的公式汇总</div></div></div><div class="right">›</div></div>
             <div class="list-item" onclick="showTutorial('tricks')"><div class="left"><div class="icon">🧩</div><div><div class="title">做题技巧与套路</div><div class="desc">选择题排除法/关键词定位/陷阱识别</div></div></div><div class="right">›</div></div>
             <div class="list-item" onclick="showTutorial('essay')"><div class="left"><div class="icon">✍️</div><div><div class="title">解答题模板与速查</div><div class="desc">答题模板/高频要点/填空速记</div></div></div><div class="right">›</div></div>
+            <div class="list-item" onclick="startEssayPlan()"><div class="left"><div class="icon">🎯</div><div><div class="title">解答题训练计划</div><div class="desc">三阶段系统训练，打开就能练</div></div></div><div class="right">›</div></div>
             <div class="list-item" onclick="showTutorial('timeline')"><div class="left"><div class="icon">⏰</div><div><div class="title">两天突击时间表</div><div class="desc">精确到小时的复习计划</div></div></div><div class="right">›</div></div>
         </div>
         <div class="section-title">🗺️ 考纲知识体系</div>
@@ -3682,6 +3683,367 @@ document.addEventListener('keydown', function(e) {
 });
 
 // ============ Essay Training Mode ============
+
+// ============ 解答题训练计划 ============
+function startEssayPlan() {
+    const el = document.getElementById('study-content');
+    
+    // 计算训练进度
+    const essayQs = questions.filter(q => q.type === '问答题' || q.type === '填空题');
+    const fills = questions.filter(q => q.type === '填空题');
+    const essays = questions.filter(q => q.type === '问答题');
+    const fillsDone = fills.filter(q => S.answered[q.id] !== undefined).length;
+    const essaysDone = essays.filter(q => S.answered[q.id] !== undefined).length;
+    
+    // 读取训练记录
+    const planKey = 'rvc_essay_plan';
+    const plan = JSON.parse(localStorage.getItem(planKey) || '{"stage":1,"day":1,"round":0}');
+    
+    el.innerHTML = `
+        <div class="back-btn" onclick="renderStudy()">‹ 返回</div>
+        <div style="text-align:center;padding:16px 0">
+            <div style="font-size:20px;font-weight:700">🎯 解答题训练计划</div>
+            <div style="font-size:13px;color:#666;margin-top:4px">三阶段系统训练 · 压缩→重复→条件反射</div>
+        </div>
+        
+        <div style="background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-radius:12px;padding:16px;margin-bottom:16px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <div>
+                    <div style="font-size:12px;opacity:0.8">当前进度</div>
+                    <div style="font-size:16px;font-weight:700;margin-top:2px">填空 ${fillsDone}/${fills.length} · 问答 ${essaysDone}/${essays.length}</div>
+                </div>
+                <div style="text-align:right">
+                    <div style="font-size:12px;opacity:0.8">完成率</div>
+                    <div style="font-size:24px;font-weight:700">${Math.round((fillsDone+essaysDone)/essayQs.length*100)}%</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-title">第一阶段：压缩记忆（30分钟）</div>
+        <div class="list-card" style="padding:14px">
+            <p style="font-size:13px;color:#666;margin:0 0 12px">目标：把115题压缩成20个填空答案+5个问答模板。不用写，只用看和背。</p>
+            <div class="list-item" onclick="startFillDrill()"><div class="left"><div class="icon">📋</div><div><div class="title">Step 1：填空题配对记忆</div><div class="desc">20个"关键词→答案"配对，逐个过关</div></div></div><div class="right">›</div></div>
+            <div class="list-item" onclick="startMnemonicDrill()"><div class="left"><div class="icon">🧠</div><div><div class="title">Step 2：5个口诀记忆</div><div class="desc">内采方求验 / 同金环曲背轮条划 / 9管3动4实时</div></div></div><div class="right">›</div></div>
+            <div class="list-item" onclick="showTutorial('essay')"><div class="left"><div class="icon">📖</div><div><div class="title">Step 3：通读万能模板</div><div class="desc">5个模板各读2遍，不用背细节</div></div></div><div class="right">›</div></div>
+        </div>
+
+        <div class="section-title">第二阶段：间隔重复（每天3轮）</div>
+        <div class="list-card" style="padding:14px">
+            <p style="font-size:13px;color:#666;margin:0 0 12px">目标：翻卡片快速过，标记不熟的反复出现直到全部"记住了"。</p>
+            <div class="list-item" onclick="startEssayTraining('sprint')"><div class="left"><div class="icon">🚀</div><div><div class="title">第1轮：全量过一遍（30min）</div><div class="desc">翻卡片，标记记住/模糊/没记住</div></div></div><div class="right">›</div></div>
+            <div class="list-item" onclick="startWeakDrill()"><div class="left"><div class="icon">🔄</div><div><div class="title">第2轮：只过薄弱题（15min）</div><div class="desc">上轮标记"没记住"和"模糊"的题</div></div></div><div class="right">›</div></div>
+            <div class="list-item" onclick="startEssayTraining('write')"><div class="left"><div class="icon">✏️</div><div><div class="title">第3轮：默写5个模板（10min）</div><div class="desc">不看答案写出来，检验记忆效果</div></div></div><div class="right">›</div></div>
+        </div>
+
+        <div class="section-title">第三阶段：实战模拟</div>
+        <div class="list-card" style="padding:14px">
+            <p style="font-size:13px;color:#666;margin:0 0 12px">目标：模拟考场节奏，练习"看到关键词→输出答案"的条件反射。</p>
+            <div class="list-item" onclick="startEssayTraining('timed')"><div class="left"><div class="icon">⏱️</div><div><div class="title">限时实战（5min/题）</div><div class="desc">模拟比赛压力，练答题速度</div></div></div><div class="right">›</div></div>
+            <div class="list-item" onclick="startEssayExam()"><div class="left"><div class="icon">📝</div><div><div class="title">模拟考试（6填空+5问答）</div><div class="desc">按真实比例抽题，30分钟限时</div></div></div><div class="right">›</div></div>
+        </div>
+
+        <div class="section-title" style="margin-top:20px">💡 记忆口诀速查</div>
+        <div class="list-card" style="padding:14px;font-size:13px;line-height:2">
+            <div><b>手眼标定</b>：<span style="color:#1677ff">内采方求验</span>（内参→采集→方程AX=XB→求解→验证）</div>
+            <div><b>光源选型</b>：<span style="color:#1677ff">同金环曲背轮条划</span>（同轴→金属，环形→曲面，背光→轮廓，条形→划痕）</div>
+            <div><b>Dobot端口</b>：<span style="color:#1677ff">9管3动4实时</span>（29999管理，30003运动，30004实时8ms）</div>
+            <div><b>相机计算</b>：<span style="color:#1677ff">精除三尺乘三</span>（像素当量=精度÷3，FOV=尺寸×1.3）</div>
+            <div><b>中值滤波</b>：<span style="color:#1677ff">排序取中间极端选不到</span>（排序后极端噪声值永远不在中间）</div>
+        </div>
+    `;
+}
+
+// 填空题配对记忆训练
+function startFillDrill() {
+    const FILL_PAIRS = [
+        {trigger:'面部/脸部____进行身份识别', answer:'特征信息', hint:'脸部的什么信息？特征信息'},
+        {trigger:'人脸识别系统...____以及识别', answer:'特征提取', hint:'识别前的最后一步'},
+        {trigger:'____技术基于面部特征', answer:'人脸识别', hint:'什么技术？'},
+        {trigger:'情感计算基于____', answer:'人脸识别', hint:'先识别脸，再分析表情'},
+        {trigger:'语音四要素____、____、____、音长', answer:'音高、音强、音色', hint:'高强色长'},
+        {trigger:'语音识别：前端处理、____、____、解码', answer:'特征提取、模式匹配', hint:'提取特征→匹配模式'},
+        {trigger:'采用____技术压缩图像数据量', answer:'图像压缩', hint:'直接说'},
+        {trigger:'图像识别对图像进行____、____', answer:'处理、分析', hint:'先处理再分析'},
+        {trigger:'图像分类训练：____、预处理、____、训练、____、输出', answer:'数据准备、特征工程、模型评估', hint:'准备→工程→评估'},
+        {trigger:'____建立学习过程，与训练数据比较', answer:'监督学习', hint:'有标签=有监督'},
+        {trigger:'常见标定板类型', answer:'棋盘格标定板、圆点标定板', hint:'黑白格+圆点'},
+        {trigger:'____属于图像采集单元', answer:'相机（工业相机）', hint:'拍照的设备'},
+        {trigger:'光圈较小时亮度____对比度____', answer:'较暗、较低', hint:'小光圈=暗+低'},
+        {trigger:'机器视觉硬件系统包括____', answer:'光源、镜头、相机', hint:'照明+成像+采集'},
+        {trigger:'____用于聚集光线使目标清晰成像', answer:'镜头', hint:'聚光的'},
+        {trigger:'____设计算法处理图像...属于核心', answer:'图像处理软件', hint:'软件是大脑'},
+        {trigger:'cvtColor BGR转GRAY参数', answer:'cv2.COLOR_BGR2GRAY', hint:'BGR2GRAY'},
+        {trigger:'Python安装工具', answer:'pip', hint:''},
+        {trigger:'print(8+7%2**2)', answer:'11', hint:'**→%→+：8+7%4=8+3=11'},
+        {trigger:'彩色图像由____幅灰度图组合', answer:'3', hint:'RGB三通道'},
+    ];
+    
+    S.mode = 'fill_drill';
+    S.fillPairs = shuffle([...FILL_PAIRS]);
+    S.fillIdx = 0;
+    S.revealed = false;
+    S.fillCorrect = 0;
+    S.fillWrong = [];
+    
+    switchTab('practice');
+    renderFillDrill();
+}
+
+function renderFillDrill() {
+    const el = document.getElementById('practice-content');
+    
+    if (S.fillIdx >= S.fillPairs.length) {
+        // 完成一轮
+        const total = S.fillPairs.length;
+        const wrongCount = S.fillWrong.length;
+        el.innerHTML = `
+            <div style="text-align:center;padding:30px 16px">
+                <div style="font-size:48px">🎉</div>
+                <div style="font-size:20px;font-weight:700;margin-top:12px">填空配对训练完成！</div>
+                <div style="font-size:14px;color:#666;margin-top:8px">正确 ${total-wrongCount}/${total}</div>
+                ${wrongCount > 0 ? `
+                    <div style="margin-top:16px;text-align:left;background:#fff0f0;border-radius:10px;padding:14px">
+                        <div style="font-size:13px;font-weight:600;color:#e64340;margin-bottom:8px">需要加强的：</div>
+                        ${S.fillWrong.map(p => `<div style="font-size:12px;margin-bottom:4px">• ${p.trigger} → <b>${p.answer}</b></div>`).join('')}
+                    </div>
+                    <button class="btn btn-primary" onclick="S.fillPairs=shuffle([...S.fillWrong]);S.fillIdx=0;S.fillWrong=[];S.revealed=false;renderFillDrill()" style="margin-top:16px">只练错的</button>
+                ` : ''}
+                <button class="btn btn-ghost" onclick="startEssayPlan()" style="margin-top:12px">返回训练计划</button>
+            </div>
+        `;
+        return;
+    }
+    
+    const pair = S.fillPairs[S.fillIdx];
+    const cur = S.fillIdx + 1;
+    const total = S.fillPairs.length;
+    
+    el.innerHTML = `
+        <div class="q-progress">
+            <span class="back-btn" onclick="startEssayPlan();switchTab('study')" style="margin-right:8px;padding:0;font-size:16px">✕</span>
+            <span>${cur}/${total}</span>
+            <div class="bar-wrap"><div class="bar-fill" style="width:${cur/total*100}%"></div></div>
+            <span style="font-size:12px;color:#07c160;font-weight:600">${S.fillCorrect}✓</span>
+        </div>
+        <div style="background:#f8f8f8;border-radius:12px;padding:20px;margin-top:12px;text-align:center">
+            <div style="font-size:12px;color:#999;margin-bottom:8px">看到这个题目 ↓</div>
+            <div style="font-size:16px;font-weight:600;color:#333;line-height:1.6">${pair.trigger}</div>
+        </div>
+        ${!S.revealed ? `
+            <div style="margin-top:16px">
+                <input id="fill-input" type="text" placeholder="输入答案..." 
+                    style="width:100%;padding:14px;border:2px solid #e0e0e0;border-radius:10px;font-size:16px;text-align:center;outline:none"
+                    onkeydown="if(event.key==='Enter')checkFillAnswer()">
+                <div style="display:flex;gap:10px;margin-top:12px">
+                    <button class="btn btn-ghost" onclick="S.revealed=true;renderFillDrill()" style="flex:1">看答案</button>
+                    <button class="btn btn-primary" onclick="checkFillAnswer()" style="flex:1">确认</button>
+                </div>
+            </div>
+        ` : `
+            <div style="margin-top:16px;background:${S.fillLastCorrect?'#e8faf0':'#fff0f0'};border-radius:12px;padding:16px;text-align:center">
+                <div style="font-size:14px;font-weight:600;color:${S.fillLastCorrect?'#07c160':'#e64340'}">${S.fillLastCorrect?'✅ 正确！':'❌ 答案是：'}</div>
+                <div style="font-size:20px;font-weight:700;color:#333;margin-top:8px">${pair.answer}</div>
+                ${pair.hint ? `<div style="font-size:12px;color:#666;margin-top:6px">💡 ${pair.hint}</div>` : ''}
+            </div>
+            <button class="btn btn-green" onclick="S.fillIdx++;S.revealed=false;renderFillDrill()" style="margin-top:16px;width:100%">下一个 →</button>
+        `}
+    `;
+    
+    if (!S.revealed) setTimeout(() => document.getElementById('fill-input')?.focus(), 100);
+}
+
+function checkFillAnswer() {
+    const input = document.getElementById('fill-input');
+    const userAns = (input?.value || '').trim();
+    const pair = S.fillPairs[S.fillIdx];
+    
+    // 模糊匹配：答案中的关键部分出现即可
+    const answerParts = pair.answer.replace(/[（）、，]/g, ' ').split(/\s+/).filter(s => s.length >= 2);
+    const isCorrect = answerParts.some(part => userAns.includes(part)) || userAns === pair.answer;
+    
+    S.fillLastCorrect = isCorrect;
+    if (isCorrect) {
+        S.fillCorrect++;
+    } else {
+        S.fillWrong.push(pair);
+    }
+    S.revealed = true;
+    renderFillDrill();
+}
+
+// 口诀记忆训练
+function startMnemonicDrill() {
+    const MNEMONICS = [
+        {
+            topic: '手眼标定流程',
+            mnemonic: '内采方求验',
+            expansion: ['内参标定(张正友法+棋盘格)', '采集数据(8-10个姿态)', '方程AX=XB', '求解(Tsai-Lenz法)', '验证精度(<1mm)'],
+            fullAnswer: '①内参标定(张正友法) ②数据采集(多姿态) ③建立AX=XB ④Tsai-Lenz求解 ⑤精度验证'
+        },
+        {
+            topic: '光源选型',
+            mnemonic: '同金环曲背轮条划',
+            expansion: ['同轴光→金属镜面(垂直入射反射回相机)', '环形光→曲面物体(360°消除阴影)', '背光→轮廓测量(剪影不受颜色干扰)', '条形光→划痕检测(低角度侧光产生阴影)'],
+            fullAnswer: '同轴→金属缺陷 | 环形→曲面 | 背光→轮廓尺寸 | 条形→平面划痕'
+        },
+        {
+            topic: 'Dobot三端口',
+            mnemonic: '9管3动4实时',
+            expansion: ['29999=Dashboard管理(状态/使能/清报警)', '30003=运动指令(PTP/CP/圆弧)', '30004=实时数据(每8ms=125Hz)'],
+            fullAnswer: '29999管理 | 30003运动指令 | 30004实时数据8ms/125Hz'
+        },
+        {
+            topic: '相机分辨率计算',
+            mnemonic: '精除三尺乘三',
+            expansion: ['像素当量=精度÷3(安全系数)', 'FOV=产品尺寸×1.3(余量)', '分辨率=FOV÷像素当量', '例：50mm精度0.1mm→0.033mm/pixel→65mm/0.033≈2000pixel'],
+            fullAnswer: '像素当量=精度/3 → FOV=尺寸×1.3 → 分辨率=FOV/像素当量'
+        },
+        {
+            topic: '中值滤波vs均值',
+            mnemonic: '排序取中间极端选不到',
+            expansion: ['中值：邻域排序取中间值', '椒盐噪声=极端值(0或255)', '排序后极端值在两端，永远不会是中值', '均值会"扩散"噪声，中值直接排除'],
+            fullAnswer: '中值排序取中间→极端噪声值永远选不到→彻底排除且保边'
+        },
+    ];
+    
+    S.mode = 'mnemonic_drill';
+    S.mnemonics = MNEMONICS;
+    S.mnIdx = 0;
+    S.mnStage = 'show'; // show, test, result
+    
+    switchTab('practice');
+    renderMnemonicDrill();
+}
+
+function renderMnemonicDrill() {
+    const el = document.getElementById('practice-content');
+    
+    if (S.mnIdx >= S.mnemonics.length) {
+        el.innerHTML = `
+            <div style="text-align:center;padding:30px">
+                <div style="font-size:48px">🧠</div>
+                <div style="font-size:18px;font-weight:700;margin-top:12px">5个口诀全部过完！</div>
+                <div style="font-size:13px;color:#666;margin-top:8px">现在闭上眼，试着回忆每个口诀</div>
+                <button class="btn btn-primary" onclick="S.mnIdx=0;S.mnStage='test';renderMnemonicDrill()" style="margin-top:20px">开始自测</button>
+                <button class="btn btn-ghost" onclick="startEssayPlan();switchTab('study')" style="margin-top:10px">返回</button>
+            </div>
+        `;
+        return;
+    }
+    
+    const mn = S.mnemonics[S.mnIdx];
+    const cur = S.mnIdx + 1;
+    const total = S.mnemonics.length;
+    
+    if (S.mnStage === 'show') {
+        el.innerHTML = `
+            <div class="q-progress">
+                <span class="back-btn" onclick="startEssayPlan();switchTab('study')" style="margin-right:8px;padding:0;font-size:16px">✕</span>
+                <span>${cur}/${total}</span>
+                <div class="bar-wrap"><div class="bar-fill" style="width:${cur/total*100}%"></div></div>
+            </div>
+            <div style="text-align:center;padding:20px 0">
+                <div style="font-size:12px;color:#999">主题</div>
+                <div style="font-size:18px;font-weight:700;margin-top:4px">${mn.topic}</div>
+            </div>
+            <div style="background:linear-gradient(135deg,#1677ff,#0958d9);color:#fff;border-radius:16px;padding:24px;text-align:center;margin:12px 0">
+                <div style="font-size:12px;opacity:0.8">口诀</div>
+                <div style="font-size:28px;font-weight:700;margin-top:8px;letter-spacing:4px">${mn.mnemonic}</div>
+            </div>
+            <div style="background:#f8f8f8;border-radius:12px;padding:16px;margin-top:12px">
+                <div style="font-size:12px;color:#666;margin-bottom:8px">展开含义：</div>
+                ${mn.expansion.map((e,i) => `<div style="font-size:13px;margin-bottom:6px;padding-left:12px;border-left:3px solid #1677ff">${e}</div>`).join('')}
+            </div>
+            <div style="background:#e8faf0;border-radius:8px;padding:10px 14px;margin-top:12px;font-size:13px">
+                <b>完整答案：</b>${mn.fullAnswer}
+            </div>
+            <button class="btn btn-primary" onclick="S.mnIdx++;renderMnemonicDrill()" style="margin-top:20px;width:100%">记住了，下一个 →</button>
+        `;
+    } else if (S.mnStage === 'test') {
+        el.innerHTML = `
+            <div class="q-progress">
+                <span class="back-btn" onclick="startEssayPlan();switchTab('study')" style="margin-right:8px;padding:0;font-size:16px">✕</span>
+                <span>自测 ${cur}/${total}</span>
+                <div class="bar-wrap"><div class="bar-fill" style="width:${cur/total*100}%"></div></div>
+            </div>
+            <div style="text-align:center;padding:30px 0">
+                <div style="font-size:14px;color:#666">这个主题的口诀是什么？</div>
+                <div style="font-size:22px;font-weight:700;margin-top:12px">${mn.topic}</div>
+            </div>
+            <input id="mn-input" type="text" placeholder="输入口诀..." 
+                style="width:100%;padding:16px;border:2px solid #e0e0e0;border-radius:10px;font-size:18px;text-align:center;outline:none;letter-spacing:2px"
+                onkeydown="if(event.key==='Enter')checkMnemonic()">
+            <div style="display:flex;gap:10px;margin-top:16px">
+                <button class="btn btn-ghost" onclick="S.mnStage='result';renderMnemonicDrill()" style="flex:1">看答案</button>
+                <button class="btn btn-primary" onclick="checkMnemonic()" style="flex:1">确认</button>
+            </div>
+        `;
+        setTimeout(() => document.getElementById('mn-input')?.focus(), 100);
+    } else {
+        el.innerHTML = `
+            <div class="q-progress">
+                <span>${cur}/${total}</span>
+                <div class="bar-wrap"><div class="bar-fill" style="width:${cur/total*100}%"></div></div>
+            </div>
+            <div style="text-align:center;padding:16px 0">
+                <div style="font-size:16px;font-weight:600">${mn.topic}</div>
+                <div style="font-size:28px;font-weight:700;color:#1677ff;margin-top:12px;letter-spacing:4px">${mn.mnemonic}</div>
+                <div style="font-size:13px;color:#666;margin-top:12px">${mn.fullAnswer}</div>
+            </div>
+            <button class="btn btn-green" onclick="S.mnIdx++;S.mnStage='test';renderMnemonicDrill()" style="margin-top:20px;width:100%">下一个</button>
+        `;
+    }
+}
+
+function checkMnemonic() {
+    S.mnStage = 'result';
+    renderMnemonicDrill();
+}
+
+// 薄弱题训练（只练没记住的）
+function startWeakDrill() {
+    const essayQs = questions.filter(q => q.type === '问答题' || q.type === '填空题');
+    // 找出没做过的 + 做错的
+    const weak = essayQs.filter(q => S.wrong.includes(q.id) || S.answered[q.id] === undefined);
+    
+    if (!weak.length) {
+        toast('没有薄弱题了，全部掌握！');
+        return;
+    }
+    
+    S.mode = 'essay_sprint';
+    S.essayMode = 'sprint';
+    S.qList = shuffle(weak);
+    S.idx = 0;
+    S.sel = {};
+    S.revealed = false;
+    S.examMode = false;
+    
+    switchTab('practice');
+    renderEssayQ();
+    toast(`🔄 薄弱题：${weak.length}道`);
+}
+
+// 解答题模拟考试
+function startEssayExam() {
+    const fills = shuffle(questions.filter(q => q.type === '填空题')).slice(0, 6);
+    const essays = shuffle(questions.filter(q => q.type === '问答题')).slice(0, 5);
+    
+    S.mode = 'essay_timed';
+    S.essayMode = 'timed';
+    S.qList = [...fills, ...essays];
+    S.idx = 0;
+    S.sel = {};
+    S.revealed = false;
+    S.examMode = false;
+    S.essayTimer = null;
+    S.essayStartTime = Date.now();
+    
+    switchTab('practice');
+    renderEssayQ();
+    toast('📝 模拟考试：6填空+5问答，30分钟');
+}
+
 const ESSAY_TEMPLATES = {
     '流程类': { keywords: ['步骤','流程','过程','如何'], template: '分步骤回答：①... ②... ③...' },
     '对比类': { keywords: ['区别','差异','对比','不同'], template: '从多维度对比：概念/原理/适用场景/优缺点' },

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rvc-quiz-1779299535';
+const CACHE_NAME = 'rvc-quiz-1779299939';
 const urlsToCache = ['/shuati/', '/shuati/index.html'];
 
 self.addEventListener('install', event => {
