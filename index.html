@@ -486,6 +486,7 @@ function renderPracticeLanding() {
             <div class="list-item" onclick="startEssayTraining('write')"><div class="left"><div class="icon">✏️</div><div><div class="title">默写模式</div><div class="desc">写出答案，AI关键词打分</div></div></div><div class="right">›</div></div>
             <div class="list-item" onclick="startEssayTraining('hints')"><div class="left"><div class="icon">💡</div><div><div class="title">提示模式</div><div class="desc">给出关键词提示，补全答案</div></div></div><div class="right">›</div></div>
             <div class="list-item" onclick="startEssayTraining('timed')"><div class="left"><div class="icon">⏱️</div><div><div class="title">限时训练</div><div class="desc">每题5分钟，模拟比赛节奏</div></div></div><div class="right">›</div></div>
+            <div class="list-item" onclick="startEssayTraining('sprint')"><div class="left"><div class="icon">🚀</div><div><div class="title">考前冲刺</div><div class="desc">按性价比排序，优先背拿分最稳的题</div></div></div><div class="right">›</div></div>
         </div>
         <div class="section-title">按知识板块</div>
         <div class="list-card">
@@ -3726,8 +3727,7 @@ function startEssayTraining(mode) {
     if (!essayQs.length) { toast('没有解答题'); return; }
     
     S.mode = 'essay_' + mode;
-    S.essayMode = mode; // 'write', 'hints', 'timed'
-    S.qList = shuffle([...essayQs]);
+    S.essayMode = mode; // 'write', 'hints', 'timed', 'sprint'
     S.idx = 0;
     S.sel = {};
     S.revealed = false;
@@ -3735,12 +3735,60 @@ function startEssayTraining(mode) {
     S.essayTimer = null;
     S.essayStartTime = 0;
     
-    if (mode === 'timed') {
+    if (mode === 'sprint') {
+        // 考前冲刺：按性价比排序
+        S.qList = getEssaySprintOrder();
+    } else if (mode === 'timed') {
         S.essayStartTime = Date.now();
+        S.qList = shuffle([...essayQs]);
+    } else {
+        S.qList = shuffle([...essayQs]);
     }
     
     switchTab('practice');
     renderEssayQ();
+}
+
+function getEssaySprintOrder() {
+    // 性价比排序：优先练习"背了就能拿满分"的题
+    const essayQs = questions.filter(q => q.type === '问答题' || q.type === '填空题');
+    
+    // 计算每题的"性价比分数"
+    const scored = essayQs.map(q => {
+        let score = 50; // 基础分
+        const ans = typeof q.answer === 'string' ? q.answer : '';
+        const question = q.question;
+        
+        // 填空题性价比最高（背答案就行）
+        if (q.type === '填空题') score += 40;
+        
+        // 计算题有标准答案
+        if (question.includes('计算') || question.includes('分辨率')) score += 30;
+        
+        // 流程类题（套模板就行）
+        if (question.includes('步骤') || question.includes('流程')) score += 25;
+        
+        // 对比类题（表格对比，结构清晰）
+        if (question.includes('区别') || question.includes('差异') || question.includes('对比')) score += 20;
+        
+        // 已经做错过的优先
+        if (S.wrong.includes(q.id)) score += 15;
+        
+        // 没做过的优先
+        if (S.answered[q.id] === undefined) score += 10;
+        
+        // 答案短的容易背
+        if (ans.length < 200) score += 10;
+        
+        // 间隔重复：上次做对的降低优先级
+        if (S.answered[q.id] === true) score -= 20;
+        
+        return { q, score };
+    });
+    
+    // 按分数降序
+    scored.sort((a, b) => b.score - a.score);
+    return scored.map(s => s.q);
 }
 
 function renderEssayQ() {
@@ -3764,6 +3812,41 @@ function renderEssayQ() {
             S.essayStartTime = Date.now();
             S.essayTimer = setInterval(updateEssayTimer, 1000);
         }
+    }
+    
+    // 冲刺模式：快速翻卡片记忆
+    if (S.essayMode === 'sprint') {
+        const refAns = q.answer || '';
+        el.innerHTML = `
+            <div class="q-progress">
+                <span class="back-btn" onclick="exitPractice()" style="margin-right:8px;padding:0;font-size:16px">✕</span>
+                <span>${cur}/${total}</span>
+                <div class="bar-wrap"><div class="bar-fill" style="width:${cur/total*100}%"></div></div>
+                <span style="font-size:11px;color:#fff;background:#e64340;padding:2px 8px;border-radius:4px">冲刺</span>
+            </div>
+            <div class="q-card">
+                <div class="q-type-badge">${q.type} · ${q.category || ''} · ${essayType}</div>
+                <div class="q-text">${q.question}</div>
+            </div>
+            ${!S.revealed ? `
+                <div onclick="S.revealed=true;renderEssayQ()" style="background:#f8f8f8;border:2px dashed #ddd;border-radius:12px;padding:40px 20px;text-align:center;cursor:pointer;margin-top:12px">
+                    <div style="font-size:24px;margin-bottom:8px">🧠</div>
+                    <div style="font-size:14px;color:#666">先在脑中回忆答案要点</div>
+                    <div style="font-size:13px;color:#1677ff;margin-top:8px">点击翻转查看标准答案 →</div>
+                </div>
+            ` : `
+                <div style="background:#f0f7ff;border-radius:12px;padding:16px;margin-top:12px;border:1px solid #d0e5ff">
+                    <div style="font-size:12px;font-weight:600;color:#1677ff;margin-bottom:8px">📝 标准答案：</div>
+                    <div style="font-size:13px;color:#333;line-height:1.8;white-space:pre-wrap">${refAns}</div>
+                </div>
+                <div style="margin-top:16px;display:flex;gap:10px">
+                    <button onclick="markSprintResult(${q.id},false)" style="flex:1;padding:14px;border:none;background:#fff0f0;color:#e64340;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer">❌ 没记住</button>
+                    <button onclick="markSprintResult(${q.id},'fuzzy')" style="flex:1;padding:14px;border:none;background:#fff8e6;color:#ed6a0c;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer">🤔 模糊</button>
+                    <button onclick="markSprintResult(${q.id},true)" style="flex:1;padding:14px;border:none;background:#e8faf0;color:#07c160;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer">✅ 记住了</button>
+                </div>
+            `}
+        `;
+        return;
     }
     
     let hintsHtml = '';
@@ -3889,6 +3972,34 @@ function nextEssayQ() {
     S.idx++;
     S.revealed = false;
     if (S.essayTimer) { clearInterval(S.essayTimer); S.essayTimer = null; }
+    renderEssayQ();
+}
+
+function markSprintResult(qid, result) {
+    // result: true=记住了, 'fuzzy'=模糊, false=没记住
+    if (result === true) {
+        S.answered[qid] = true;
+        // 从冲刺队列中移除（不再重复出现）
+    } else if (result === 'fuzzy') {
+        // 模糊的题放到队列后面再来一次
+        const q = questions.find(x => x.id === qid);
+        if (q && S.idx < S.qList.length - 1) {
+            // 插入到后面5-10题的位置
+            const insertAt = Math.min(S.idx + 5 + Math.floor(Math.random() * 5), S.qList.length);
+            S.qList.splice(insertAt, 0, q);
+        }
+    } else {
+        // 没记住的题放到队列后面，间隔更短
+        const q = questions.find(x => x.id === qid);
+        if (q) {
+            const insertAt = Math.min(S.idx + 3, S.qList.length);
+            S.qList.splice(insertAt, 0, q);
+        }
+        if (!S.wrong.includes(qid)) S.wrong.push(qid);
+    }
+    save();
+    S.idx++;
+    S.revealed = false;
     renderEssayQ();
 }
 
