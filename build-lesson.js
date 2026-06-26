@@ -179,46 +179,52 @@ const FILES = [xl, sl, cls];
 
 // 给没有 tip 的练习行补上默认 tip
 function addDefaultTips(files) {
+  // key → { tip:一句话功能, why:为什么这么写/记忆点 }
   const tipMap = {
-    'dType.{{load}}': '加载DLL拿到api句柄',
-    '{{ConnectDobot}}': '连接机械臂,取返回元组[0]',
-    '{{ClearAllAlarmsState}}': '清除报警',
-    '{{SetPTPJumpParams}}': '设门型运动抬升高度',
-    '{{SetInfraredSensor}}': '光电传感器 下料=2 上料=1',
-    '{{SetEndEffectorParams}}': '设夹爪末端(长59.7mm)',
-    '{{SetQueuedCmdClear}}': '清空指令队列',
-    '{{SetQueuedCmdStartExec}}': '开始执行队列',
-    '{{SetEndEffectorGripper}}': '夹爪张开,现场骨架漏了此行要补',
-    '{{SetHOMECmd}}': '机械臂回零',
-    '{{SetEMotor}}': '初始化传送带(先停)',
-    '{{SetPTPCmdEx}}': 'PTP点到点运动指令',
-    '{{dSleep}}': '等夹爪夹稳',
-    '{{GetInfraredSensor}}': '读光电传感器,i[0]==1表示到位',
-    '{{bind}}': '绑定8081端口',
-    '{{listen}}': '监听连接',
-    '{{accept}}': '接受客户端连接(阻塞)',
-    '{{connect}}': '连接服务端8081',
-    '{{recv}}': '接收数据',
-    '{{send}}': '发送数据(必须.encode)',
-    '{{encode}}': '字符串转bytes',
-    '{{decode}}': 'bytes转字符串',
-    '{{Thread}}': '创建线程',
-    '{{predict}}': 'ResNet18识别,返回(种类,编号,置信度)',
-    '{{get_decoded_text}}': '读card_result.json中的RFID文本',
-    '{{split}}': '按分号分割"省份;时间"',
-    '{{8081}}': 'TCP端口固定8081',
-    '{{115200}}': '波特率固定115200',
-    '"arrive1"': 'arrive1=RFID面到位信号',
-    '"arrive2"': 'arrive2=传送带到位信号',
-    '"run"': 'run=节拍信号触发上料',
-    '"M"': 'M开头是视觉传来的编号',
+    'dType.{{load}}': { tip:'加载DLL拿到api句柄', why:'api是后面所有指令的第一个参数。记法：用之前先load。' },
+    '{{ConnectDobot}}': { tip:'连接机械臂,取返回元组[0]', why:'返回(状态码,...)，必须带[0]取状态。0=已连接,1=没找到,2=占用。' },
+    '{{ClearAllAlarmsState}}': { tip:'清除报警', why:'上次急停/撞机会留报警，不清臂就罢工不动。开机仪式第一步。' },
+    '{{SetPTPJumpParams}}': { tip:'设门型运动抬升高度', why:'门型=先抬高再平移再下降，防止拖着料撞别的。100/110是抬升高度和上限。' },
+    '{{SetInfraredSensor}}': { tip:'光电传感器 下料=2 上料=1', why:'第3参是端口号，下料机接2号、上料机接1号，记反了读不到料。' },
+    '{{SetEndEffectorParams}}': { tip:'设夹爪末端(长59.7mm)', why:'告诉系统末端是夹爪、长59.7。最后那个1=夹爪类型，本赛是夹爪不是吸盘！' },
+    '{{SetQueuedCmdClear}}': { tip:'清空指令队列', why:'倒空上次残留任务，避免一启动就乱动。' },
+    '{{SetQueuedCmdStartExec}}': { tip:'开始执行队列', why:'Dobot指令先进队列再执行，不StartExec就全堵着不动。' },
+    '{{SetEndEffectorGripper}}': { tip:'夹爪控制(开/合)', why:'第2参=使能,第3参=开合。现场骨架开头那行常被漏，要补回。' },
+    '{{SetHOMECmd}}': { tip:'机械臂回零', why:'回机械原点，坐标系才准。开机仪式最后一步。' },
+    '{{SetEMotor}}': { tip:'传送带电机', why:'端口0,使能,速度。开头先停(负速)，到位后正转送料。只有上料机有。' },
+    '{{SetPTPCmdEx}}': { tip:'PTP点到点运动', why:'第2参=1是运动模式,后面x,y,z,r坐标。带Ex是阻塞版,执行完才返回。' },
+    '{{dSleep}}': { tip:'等夹爪夹稳', why:'夹/松爪是机械动作有延迟，不等就抬走会掉料。下料1000ms,上料100ms。' },
+    '{{GetInfraredSensor}}': { tip:'读光电传感器', why:'返回列表,i[0]==1表示挡光=料到位。靠它判断传送带送到没。' },
+    '{{bind}}': { tip:'绑定IP和端口', why:'下料机当服务器,占住127.0.0.1:8081等别人连。' },
+    '{{listen}}': { tip:'开始监听', why:'参数5=最多排队5个连接。绑定后必须listen才能accept。' },
+    '{{accept}}': { tip:'接受客户端连接(阻塞)', why:'按顺序收：视觉→分类→上料。顺序错了对象就连错。返回(连接,地址)。' },
+    '{{connect}}': { tip:'连接服务端8081', why:'上料/分类是客户端,主动连下料机的8081。' },
+    '{{recv}}': { tip:'接收数据', why:'recv(1024)收最多1024字节,要.decode转字符串才能比较。' },
+    '{{send}}': { tip:'发送数据', why:'发送的必须是bytes,所以要"xxx".encode("utf-8")。漏encode直接报错。' },
+    '{{encode}}': { tip:'字符串转bytes', why:'网络只能传bytes,发送前必须encode。' },
+    '{{decode}}': { tip:'bytes转字符串', why:'收到的是bytes,要decode("utf-8")才能当字符串用。' },
+    '{{Thread}}': { tip:'创建线程', why:'下料机要同时伺候视觉/分类/上料三方,每个开一条线程并行收发。' },
+    '{{predict}}': { tip:'ResNet18识别', why:'返回(种类,编号,置信度)。本赛用深度学习分类,不是OpenCV形状识别。' },
+    '{{get_decoded_text}}': { tip:'读RFID文本', why:'读card_result.json里RFID解出的"省份;时间"。现场缺此文件要从RFID64bit拷。' },
+    '{{split}}': { tip:'按分号分割', why:'RFID内容格式是"省份;时间",split(";")[0]取省份,[1]取时间。' },
+    '{{8081}}': { tip:'TCP端口', why:'整套系统统一用8081,下料机服务端先启动占用它。' },
+    '{{115200}}': { tip:'波特率', why:'Dobot串口固定115200,写错连不上。' },
+    '{{59.7}}': { tip:'夹爪长度mm', why:'夹爪伸出59.7mm,影响末端坐标计算。' },
+    '"arrive1"': { tip:'到位信号1', why:'上料机放好料到RFID位后发,触发视觉拍RFID面。' },
+    '"arrive2"': { tip:'到位信号2', why:'传送带送到位后发,触发视觉拍正面识别。' },
+    '"run"': { tip:'节拍信号', why:'下料机发run驱动上料机取下一件,凑满8件停。' },
+    '"M"': { tip:'编号标志', why:'视觉识别出二维码后发以M开头的编号,分类端收到才开始识别。' },
   };
   files.forEach(f => {
     f.sections.forEach(s => {
       s.lines.forEach(l => {
         if (l.tip === '') {
-          for (const [key, tip] of Object.entries(tipMap)) {
-            if (l.c.includes(key)) { l.tip = tip; break; }
+          for (const [key, info] of Object.entries(tipMap)) {
+            if (l.c.includes(key)) {
+              l.tip = info.tip;
+              if (info.why) l.why = info.why;
+              break;
+            }
           }
           if (l.tip === '') l.tip = null;
         }
