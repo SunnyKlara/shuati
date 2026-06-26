@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1677ff">
+<title>现场代码 · 刷题默写</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:#f6f6f6;color:#1a1a1a;font-size:15px;line-height:1.5;min-height:100vh;padding-bottom:64px}
+a{color:inherit;text-decoration:none}
+code,pre,.mono{font-family:"SF Mono",Consolas,"Courier New",monospace}
+
+/* Tab bar */
+.tab-bar{position:fixed;bottom:0;left:0;right:0;height:58px;background:#fff;border-top:1px solid #e5e5e5;display:flex;z-index:100}
+.tab-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;color:#999;cursor:pointer}
+.tab-item.active{color:#1677ff}
+.tab-item .ic{font-size:20px;margin-bottom:2px}
+
+.page{display:none;padding:14px}
+.page.active{display:block}
+.page-header{font-size:18px;font-weight:700;padding:8px 0 14px}
+.page-header .sub{font-size:12px;color:#999;font-weight:400;margin-top:3px}
+
+/* Stats */
+.stats-row{display:flex;gap:10px;margin-bottom:14px}
+.stat-box{flex:1;background:#fff;border-radius:10px;padding:14px 8px;text-align:center}
+.stat-box .num{font-size:22px;font-weight:700;color:#1677ff}
+.stat-box .lbl{font-size:11px;color:#999;margin-top:2px}
+
+/* Module cards */
+.section-title{font-size:13px;color:#999;margin:18px 0 10px;font-weight:600}
+.mod-card{background:#fff;border-radius:10px;padding:15px 16px;margin-bottom:11px;cursor:pointer;transition:transform .1s;border-left:4px solid #1677ff}
+.mod-card:active{transform:scale(.98)}
+.mod-card .mt{font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px}
+.mod-card .md{font-size:12px;color:#999;margin-top:5px;line-height:1.5}
+.mod-card .meta{display:flex;gap:8px;margin-top:9px;flex-wrap:wrap}
+.mod-card .pill{font-size:11px;padding:2px 9px;border-radius:10px;background:#f0f4ff;color:#1677ff}
+.mod-card .pill.diff1{background:#e8faf0;color:#07c160}
+.mod-card .pill.diff2{background:#fff8e6;color:#ed6a0c}
+.mod-card .pill.diff3{background:#fff0f0;color:#e64340}
+.mod-card .pbar{height:4px;background:#eee;border-radius:2px;margin-top:10px;overflow:hidden}
+.mod-card .pbar i{display:block;height:100%;background:#07c160;width:0}
+
+.lvl-badge{display:inline-block;font-size:10px;padding:1px 7px;border-radius:4px;font-weight:600;margin-right:5px}
+.lvl-L1{background:#e8faf0;color:#07c160}
+.lvl-L2{background:#fff8e6;color:#ed6a0c}
+.lvl-L3{background:#fff0f0;color:#e64340}
+
+/* Quiz */
+.q-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;font-size:12px;color:#999}
+.q-top .bw{flex:1;margin:0 10px;height:3px;background:#eee;border-radius:2px}
+.q-top .bf{height:100%;background:#1677ff;border-radius:2px;width:0;transition:width .3s}
+.q-card{background:#fff;border-radius:12px;padding:18px 16px;margin-bottom:12px}
+.q-lvl{display:inline-block;font-size:11px;padding:2px 9px;border-radius:5px;font-weight:600;margin-bottom:10px}
+.q-mod{font-size:11px;color:#bbb;float:right;margin-top:2px}
+.q-prompt{font-size:15px;line-height:1.6;margin-bottom:14px;font-weight:500}
+.q-prompt .hl{color:#e64340;font-weight:600}
+
+/* code block with blanks */
+pre.code{background:#1e1e2e;color:#d4d4e8;border-radius:10px;padding:14px;font-size:13px;line-height:1.7;overflow-x:auto;white-space:pre;margin-bottom:8px}
+pre.code .cm{color:#6a7a8c}
+pre.code .kw{color:#c586c0}
+pre.code .fn{color:#dcdcaa}
+pre.code .st{color:#ce9178}
+pre.code .nm{color:#b5cea8}
+pre.code .blank{color:#ffd866;background:rgba(255,216,102,.15);border-bottom:1px dashed #ffd866;padding:0 2px}
+
+/* input area */
+.ans-input{width:100%;min-height:90px;border:1.5px solid #e5e5e5;border-radius:10px;padding:12px;font-size:14px;font-family:"SF Mono",Consolas,monospace;resize:vertical;outline:none;background:#fff;line-height:1.6}
+.ans-input:focus{border-color:#1677ff}
+.hint-row{font-size:12px;color:#999;margin:8px 2px;display:flex;justify-content:space-between;align-items:center}
+.hint-toggle{color:#1677ff;cursor:pointer}
+
+/* options for choice/judge */
+.opt-list{list-style:none}
+.opt-item{padding:12px 14px;margin-bottom:8px;border:1.5px solid #eee;border-radius:10px;display:flex;align-items:flex-start;gap:10px;cursor:pointer}
+.opt-item:active{background:#fafafa}
+.opt-item.selected{border-color:#1677ff;background:#f0f7ff}
+.opt-item.correct{border-color:#07c160;background:#e8faf0}
+.opt-item.wrong{border-color:#e64340;background:#fff0f0}
+.opt-label{width:22px;height:22px;border-radius:50%;background:#f5f5f5;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0}
+.opt-item.selected .opt-label{background:#1677ff;color:#fff}
+.opt-item.correct .opt-label{background:#07c160;color:#fff}
+.opt-item.wrong .opt-label{background:#e64340;color:#fff}
+.opt-text{flex:1;font-size:13px;font-family:"SF Mono",Consolas,monospace;line-height:1.5}
+
+/* answer reveal */
+.ans-box{margin-top:12px;border-radius:10px;overflow:hidden;display:none}
+.ans-box.show{display:block}
+.ans-head{padding:10px 14px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px}
+.ans-head.ok{background:#e8faf0;color:#07c160}
+.ans-head.no{background:#fff0f0;color:#e64340}
+.ans-body{background:#fafafa;padding:12px 14px}
+.ans-body .lab{font-size:12px;color:#999;margin:8px 0 4px;font-weight:600}
+.ans-body .lab:first-child{margin-top:0}
+.ans-body .why{font-size:13px;color:#444;line-height:1.7}
+.ans-body .why .k{color:#e64340;font-weight:600}
+.mem{background:#fff8e6;border-radius:8px;padding:10px 12px;margin-top:8px;font-size:13px;color:#8a6d1a;line-height:1.6}
+.mem b{color:#ed6a0c}
+
+/* buttons */
+.btn-row{display:flex;gap:10px;margin-top:8px}
+.btn{flex:1;padding:13px;border-radius:10px;border:none;font-size:15px;font-weight:600;cursor:pointer;text-align:center}
+.btn:active{opacity:.7}
+.btn-primary{background:#1677ff;color:#fff}
+.btn-ghost{background:#fff;color:#1677ff;border:1.5px solid #1677ff}
+.btn-green{background:#07c160;color:#fff}
+
+/* cheat / study */
+.article{background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;line-height:1.8}
+.article h3{font-size:15px;margin:14px 0 8px;padding-bottom:6px;border-bottom:1px solid #f0f0f0;color:#1677ff}
+.article h3:first-child{margin-top:0}
+.article p{font-size:13px;color:#444;margin-bottom:6px}
+.article .k{color:#e64340;font-weight:600}
+.article ul{padding-left:20px;font-size:13px;color:#444}
+.article li{margin:4px 0}
+.article pre.code{font-size:12px}
+.tip{background:#e8f4fd;border-radius:8px;padding:10px 12px;font-size:12px;color:#1677ff;margin:8px 0;line-height:1.6}
+.warn{background:#fff0f0;border-radius:8px;padding:10px 12px;font-size:12px;color:#e64340;margin:8px 0;line-height:1.6}
+
+.back-btn{display:inline-flex;align-items:center;gap:4px;font-size:14px;color:#1677ff;cursor:pointer;padding:6px 0;margin-bottom:8px}
+.empty{text-align:center;padding:60px 20px;color:#999}
+.empty .ei{font-size:38px;margin-bottom:10px}
+.toast{position:fixed;top:46%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.78);color:#fff;padding:11px 22px;border-radius:10px;font-size:14px;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.show{opacity:1}
+.tbl{width:100%;border-collapse:collapse;font-size:12px;margin:8px 0}
+.tbl th,.tbl td{border:1px solid #eee;padding:6px 8px;text-align:left}
+.tbl th{background:#f8f8f8}
+
+/* STORY 深度详解排版 */
+.story{background:#fff;border-radius:12px;padding:16px;line-height:1.85}
+.story h3{font-size:15px;margin:18px 0 8px;padding:6px 10px;border-left:3px solid #7c3aed;background:#f7f2ff;color:#5b21b6;border-radius:0 6px 6px 0}
+.story p{font-size:13.5px;color:#333;margin-bottom:10px}
+.story .scene{background:#f4e8ff;border-radius:8px;padding:12px 14px;font-size:13px;color:#5b21b6}
+.story .soul{background:#fff8e6;border-radius:8px;padding:12px 14px;font-size:13.5px;color:#8a6d1a;font-weight:500}
+.story b{color:#1a1a1a}
+.story code{background:#f0f0f4;color:#c026d3;padding:1px 5px;border-radius:4px;font-size:12px}
+.story blockquote{background:#e8f4fd;border-left:3px solid #1677ff;border-radius:0 8px 8px 0;padding:12px 14px;margin:10px 0;font-size:12.5px;color:#1f5fa8}
+.story ul{padding-left:20px;font-size:13px;color:#333;margin-bottom:10px}
+.story li{margin:5px 0}
+.story .tbl{margin:10px 0}
+.story pre.code{font-size:12px;margin:10px 0}
+</style>
+</head>
+<body>
+
+<div class="tab-bar">
+  <div class="tab-item active" data-tab="home" onclick="switchTab('home')"><span class="ic">🏠</span>模块</div>
+  <div class="tab-item" data-tab="study" onclick="switchTab('study')"><span class="ic">📘</span>讲解</div>
+  <div class="tab-item" data-tab="cheat" onclick="switchTab('cheat')"><span class="ic">⚡</span>速查</div>
+  <div class="tab-item" data-tab="wrong" onclick="switchTab('wrong')"><span class="ic">❌</span>错题</div>
+</div>
+
+<div class="page active" id="page-home">
+  <div class="page-header">现场代码 · 刷题默写<div class="sub">机器视觉竞赛 · 决赛实操代码突击</div></div>
+  <div class="stats-row">
+    <div class="stat-box"><div class="num" id="s-total">0</div><div class="lbl">总题</div></div>
+    <div class="stat-box"><div class="num" id="s-done">0</div><div class="lbl">已做</div></div>
+    <div class="stat-box"><div class="num" id="s-rate">0%</div><div class="lbl">正确率</div></div>
+    <div class="stat-box"><div class="num" id="s-wrong">0</div><div class="lbl">错题</div></div>
+  </div>
+  <div class="section-title">⚡ 快速开始</div>
+  <div class="mod-card" style="border-left-color:#07c160" onclick="startMode('all')">
+    <div class="mt">🎯 全部顺序刷</div>
+    <div class="md">按模块从易到难，连接→move→TCP→分类，完整过一遍</div>
+  </div>
+  <div class="mod-card" style="border-left-color:#ed6a0c" onclick="startMode('wrong')">
+    <div class="mt">🔁 只刷错题</div>
+    <div class="md">针对做错的题反复巩固</div>
+  </div>
+  <div class="section-title">📦 按模块训练（按复用率/重要度排序）</div>
+  <div id="mod-list"></div>
+</div>
+
+<div class="page" id="page-study">
+  <div class="page-header">模块讲解<div class="sub">先看懂"在干嘛"，再去默写</div></div>
+  <div id="study-content"></div>
+</div>
+
+<div class="page" id="page-cheat">
+  <div class="page-header">现场速查卡<div class="sub">必改参数 + 启动顺序 + 救命清单</div></div>
+  <div id="cheat-content"></div>
+</div>
+
+<div class="page" id="page-wrong">
+  <div class="page-header">错题本</div>
+  <div id="wrong-content"></div>
+</div>
+
+<div class="page" id="page-quiz"><div id="quiz-content"></div></div>
+
+<div class="toast" id="toast"></div>
+
+<script src="drill-data.js"></script>
+<script src="drill-story.js"></script>
+<script src="drill-app.js"></script>
+</body>
+</html>
