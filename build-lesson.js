@@ -73,6 +73,11 @@ function addBlanks(line, skeletonLines) {
   out = out.replace(/result\[0\]/, 'result[{{0}}]');
   // "M" in data
   out = out.replace(/"M"/, '{{$&}}');
+  // RFID read_card_text 相关
+  out = out.replace(/json\.load\b/, 'json.{{load}}');
+  out = out.replace(/os\.path\.exists\b/, 'os.path.{{exists}}');
+  out = out.replace(/data\.get\("decoded_text"\)/, 'data.{{get}}({{"decoded_text"}})');
+  out = out.replace(/return read_card_text\(\)/, 'return {{read_card_text}}()');
 
   return out;
 }
@@ -112,8 +117,10 @@ function buildFile(caseFile, examFile, fileKey, displayName, desc, runOutput) {
     { name:'连接初始化', end: i => caseLines[i].includes('SetHOMECmd') },
     { name:'坐标与move函数', end: i => /^\s+if keep == 0:/.test(caseLines[i]) },
     { name:'TCP客户端主程序', end: () => false },
-  ] : [
+  ] : fileKey === 'cls' ? [
     { name:'识别主程序', end: () => false },
+  ] : [
+    { name:'读卡文本工具', end: () => false },
   ];
 
   const sections = [];
@@ -175,7 +182,16 @@ const cls = buildFile(
   '连接成功\nMxxxx\n开始识别\n结果:1.jqr,编号:Mxxxx,置信度:0.98'
 );
 
-const FILES = [xl, sl, cls];
+// RFID 读卡文本工具：现场分类目录缺这个文件，要从 RFID64bit 拷过来并会用
+// examFile 用现场分类目录(无此文件)，使整份成为需补写的练习
+const rfid = buildFile(
+  path.join(CASE, 'RFID64bit', 'read_card_text.py'),
+  path.join(EXAM, '深度学习分类', 'read_card_text.py'),  // 现场不存在 → 全部当练习
+  'rfid', 'RFID64bit/read_card_text.py', '读卡结果·现场缺此文件需拷贝',
+  '解码文本: 广东省;2026-06-26\n>>> get_decoded_text() 取到 RFID 内容'
+);
+
+const FILES = [xl, sl, cls, rfid];
 
 // 给没有 tip 的练习行补上默认 tip
 function addDefaultTips(files) {
