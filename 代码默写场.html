@@ -79,6 +79,19 @@ body{font-family:"SF Mono",Consolas,"Courier New",monospace;background:var(--bg3
 .blk.err{color:var(--red);border-bottom-color:var(--red);animation:shake .2s}
 @keyframes shake{0%,100%{transform:translateX(0)}33%{transform:translateX(-3px)}66%{transform:translateX(3px)}}
 
+/* recall inline 补全 */
+.rcl{display:inline;outline:none;font-family:inherit;font-size:13.5px;cursor:text;white-space:pre}
+.rcl.shakeit{animation:shake .2s}
+.rc-typed{color:#fff}
+.rc-typed.bad{color:var(--red);text-decoration:underline wavy var(--red)}
+.rc-ghost{color:#4a4a63}
+.rc-hidden{color:#2c2c40}
+.rc-caret{display:inline-block;width:2px;height:15px;background:var(--blue);
+  animation:blink 1s step-end infinite;vertical-align:text-bottom;margin:0 1px}
+@keyframes blink{50%{opacity:0}}
+.lvbadge{font-size:11px;color:var(--peach);background:rgba(250,179,135,.1);
+  border:1px solid var(--peach);border-radius:4px;padding:1px 7px;margin-left:4px}
+
 /* HUD */
 .hud{height:28vh;background:var(--bg2);border-top:1px solid var(--line);display:flex;flex-direction:column;flex-shrink:0}
 .hudbar{display:flex;align-items:center;padding:5px 14px;gap:12px;border-bottom:1px solid var(--line);font-size:12px}
@@ -89,8 +102,11 @@ body{font-family:"SF Mono",Consolas,"Courier New",monospace;background:var(--bg3
 .pct{color:var(--green);font-weight:700;min-width:40px;text-align:right}
 .term{flex:1;overflow-y:auto;padding:8px 14px;font-size:12.5px;line-height:1.65}
 .tip{color:var(--yellow)}.tip b{color:#fff}
-.why{color:var(--dim);margin-top:3px}
+.why{color:#a9b1d6;margin-top:3px}
+.why em{color:var(--yellow);font-style:normal;font-weight:700}
+.why b{color:#fff;font-weight:700}
 .warn{color:var(--peach);background:rgba(250,179,135,.08);padding:4px 10px;border-radius:4px;border-left:2px solid var(--peach);margin-top:5px}
+.warn em{color:var(--red);font-style:normal;font-weight:700}
 .sysl{color:var(--green)}
 .mhint{color:var(--dim);font-size:11px;border-top:1px solid var(--line);padding:4px 14px;flex-shrink:0}
 .kbd{background:var(--bg3);border:1px solid var(--line);border-radius:3px;padding:0 5px;font-size:10px;color:var(--fg)}
@@ -183,50 +199,50 @@ const FILES = [
       {c:"# ConnectDobot函数返回一个元组，第一个元素是连接状态码"},
       {c:"# 状态码：0-已连接，1-未找到设备，2-端口占用"},
       {c:"# 连接到COM端口，波特率115200"},
-      {c:"state = dType.ConnectDobot(api, \"COM6\", 115200)[0]",tip:"第2步 · 插钥匙通电,和真机握手",why:"用上一行的api去连真机械臂。结尾\"小尾巴[0]\"别漏——返回一串值,[0]才是状态码。波特率永远115200。",warn:"\"COM6\"现场必改!设备管理器→端口看实际号"},
+      {c:"state = dType.ConnectDobot(api, \"COM6\", 115200)[0]",tip:"第2步 · 插钥匙通电,和真机握手",why:"用上一行的api去连真机械臂。结尾<em>\"小尾巴[0]\"</em>别漏——返回一串值,[0]才是状态码。波特率永远<em>115200</em>。",warn:"\"COM6\"<em>现场必改!</em>设备管理器→端口看实际号"},
       {c:""},
       {c:"# 打印机械臂连接状态"},
       {c:"# 使用状态码作为索引，从状态描述列表中获取对应文本"},
       {c:"print(\"连接状态:\", [\"已连接\", \"未找到设备\", \"端口占用\"][state])",tip:"第3步 · 看一眼仪表盘:连上没?",why:"刚才结果存在state里(0/1/2),正好当下标取中文。写完先跑一次,看到\"已连接\"再往下。"},
       {c:""},
       {c:"# 设置机械臂PTP运动模式参数(门型运动时抬升高度为100,最大高度为110)"},
-      {c:"dType.ClearAllAlarmsState(api)  # 清除所有警报状态",tip:"第4步 · 清掉上一局的报警灯",why:"不清,机械臂会罢工,后面命令全不理。这是\"让它愿意听话\"的前提。"},
-      {c:"dType.SetPTPJumpParams(api, 100, 110, isQueued=1)  # 设置跳跃运动参数",tip:"第5步 · 立规矩:抓放先抬100mm",why:"先把\"抬多高\"定好,后面move抓放才有依据——先抬高再平移,防撞旁边的货。"},
-      {c:"dType.{{SetInfraredSensor}}(api, 1, {{2}}, version=1)  # 设置光电传感器，端口1，版本2",tip:"第6步 · 启用光电传感器",why:"用来感知\"货到没到位\"。第3个参数下料机=2、上料机=1。",warn:"第3参:下料=2,上料=1,别记反!"},
+      {c:"dType.ClearAllAlarmsState(api)  # 清除所有警报状态",tip:"第4步 · 清掉上一局的报警灯",why:"不清,机械臂会<em>罢工</em>,后面命令全不理。这是\"让它愿意听话\"的前提。"},
+      {c:"dType.SetPTPJumpParams(api, 100, 110, isQueued=1)  # 设置跳跃运动参数",tip:"第5步 · 立规矩:抓放先抬100mm",why:"先把\"抬多高\"定好,后面move抓放才有依据——先抬高再平移,<em>防撞</em>旁边的货。"},
+      {c:"dType.{{SetInfraredSensor}}(api, 1, {{2}}, version=1)  # 设置光电传感器，端口1，版本2",tip:"第6步 · 启用光电传感器",why:"用来感知\"货到没到位\"。第3个参数<em>下料机=2、上料机=1</em>。",warn:"第3参:<em>下料=2,上料=1</em>,别记反!"},
       {c:""},
       {c:"# 设置机械臂末端为夹爪"},
       {c:"# 参数：夹爪长度59.7mm，末端类型为夹爪"},
-      {c:"dType.SetEndEffectorParams(api, 59.7, 0, 0, 1)",tip:"第7步 · 告诉它:手是夹爪,长59.7mm",why:"它得知道手上装的是夹爪才能算准抓取高度。最后那个1=夹爪类型。本赛全程夹爪,不是吸盘,记死!"},
+      {c:"dType.SetEndEffectorParams(api, 59.7, 0, 0, 1)",tip:"第7步 · 告诉它:手是夹爪,长59.7mm",why:"它得知道手上装的是夹爪才能算准抓取高度。最后那个1=夹爪类型。本赛全程<em>夹爪,不是吸盘</em>,记死!"},
       {c:""},
       {c:"# api清空机械臂的指令队列"},
-      {c:"dType.SetQueuedCmdClear(api)",tip:"第8步 · 把旧命令倒干净",why:"Dobot是\"先排队、后执行\"——发命令≠立刻动,要先排进队列。这行清掉上一局残留。必须先Clear,下一行才StartExec,顺序不能反。"},
+      {c:"dType.SetQueuedCmdClear(api)",tip:"第8步 · 把旧命令倒干净",why:"Dobot是<em>\"先排队、后执行\"</em>——发命令≠立刻动,要先排进队列。这行清掉上一局残留。必须<em>先Clear,下一行才StartExec</em>,顺序不能反。"},
       {c:""},
       {c:"# 开始执行队列指令"},
-      {c:"dType.SetQueuedCmdStartExec(api)",tip:"第9步 · 开闸!队列开始执行",why:"前面排队的命令,等这一声令下才真正动。没有它,后面所有动作发出去机械臂纹丝不动。"},
+      {c:"dType.SetQueuedCmdStartExec(api)",tip:"第9步 · 开闸!队列开始执行",why:"前面排队的命令,等这一声令下才真正动。没有它,后面所有动作发出去<em>机械臂纹丝不动</em>。"},
       {c:""},
       {c:"# 设置末端夹爪状态"},
       {c:"# 参数：启用夹爪(1)，夹爪打开(0)"},
-      {c:"dType.{{SetEndEffectorGripper}}(api, 0, 0, isQueued=1)",tip:"第10步 · 摆好初始手势:夹爪张开",why:"排在开闸之后,因为这是第一个真正的\"动作命令\"。总不能攥着拳头去抓货。",warn:"现场骨架漏了这行,必须自己补!"},
+      {c:"dType.{{SetEndEffectorGripper}}(api, 0, 0, isQueued=1)",tip:"第10步 · 摆好初始手势:夹爪张开",why:"排在开闸之后,因为这是第一个真正的\"动作命令\"。总不能攥着拳头去抓货。",warn:"<em>现场骨架漏了这行,必须自己补!</em>"},
       {c:""},
       {c:"# 机械臂回零"},
-      {c:"dType.SetHOMECmd(api, 1, isQueued=1)",tip:"第11步 · 回原点,校准坐标基准",why:"后面所有P点坐标都相对机械原点算。不先回零,坐标全是错的。回零=开机仪式收尾,它活了!"},
+      {c:"dType.SetHOMECmd(api, 1, isQueued=1)",tip:"第11步 · 回原点,校准坐标基准",why:"后面所有P点坐标都<em>相对机械原点</em>算。不先回零,坐标全是错的。回零=开机仪式收尾,<em>它活了!</em>"},
     ]},
     { id:"xl_1", name:"坐标与码垛数据", lines:[
       {c:""},
       {c:"# 定义关键位置坐标"},
-      {c:"P1 = [-76.6124,233.7214,108.1663,102.0224]  # 拍照点"},
+      {c:"P1 = [-76.6124,233.7214,108.1663,102.0224]  # 拍照点",tip:"P1=拍照点坐标",why:"机械臂回这点让质检员拍照。4个数=<em>x,y,z,r</em>(三个位置+一个旋转角)。",warn:"现场<em>示教</em>得到,照抄案例值不一定对"},
       {c:""},
       {c:"# P4 = []  # 视觉标定点"},
       {c:""},
-      {c:"P5 = [250, 0, 50, 0]  # 零点"},
-      {c:"P6 = [-79.4929,278.4865,-3.6015,102.0224]  # 抓取点"},
+      {c:"P5 = [250, 0, 50, 0]  # 零点",tip:"P5=零点(参考原点)",why:"一个安全的参考位置,备用。"},
+      {c:"P6 = [-79.4929,278.4865,-3.6015,102.0224]  # 抓取点",tip:"P6=抓取点(从这里夹料)",why:"分拣时机械臂先到<em>P6</em>把料夹起来,再搬去算好的垛位。",warn:"现场<em>示教</em>得到"},
       {c:""},
       {c:"# 定义4个种类物品的放置位置"},
       {c:"# P3是一个三维列表："},
       {c:"# 第一维：4个不同的物品种类"},
       {c:"# 第二维：每个种类有2个放置点（对应不同的垛）"},
       {c:"# 第三维：每个放置点的坐标[x, y, z, r]"},
-      {c:"P3 = ["},
+      {c:"P3 = [",tip:"P3=放置点总表(列表套列表)",why:"读法:<em>P3[第几类][第几垛]</em>=一个坐标。4类×2垛=8个落点,码垛算法靠它查位置。"},
       {c:"    [  # 种类1"},
       {c:"        [193.7174, 196.4782, -63.6996, -11.1977],  # 1垛"},
       {c:"        [214.8398, 137.5126, 0, -25.7088]  # 2垛"},
@@ -260,16 +276,16 @@ const FILES = [
       {c:"    \"\"\"处理视觉系统的通信线程函数\"\"\""},
       {c:"    while True:"},
       {c:"        # 接收视觉系统发送的数据"},
-      {c:"        data = socket.{{recv}}(1024).{{decode}}('utf-8')",tip:"质检员打电话来,先接听解码",why:"收数据必decode,口诀\"收decode发encode\"。data是质检员报的内容,下面靠它分情况转发。"},
+      {c:"        data = socket.{{recv}}(1024).{{decode}}('utf-8')",tip:"质检员打电话来,先接听解码",why:"收数据<em>必须decode</em>,口诀\"<em>收decode发encode</em>\"。data是质检员报的内容,下面靠它分情况转发。"},
       {c:"        print(f\"{name}发送{data}\")"},
       {c:""},
       {c:"        # 如果数据包含\"M\"，是二维码数据，转发给分类系统",tip:"M开头=质检员报的物料编号",why:"先认出这条是编号还是别的信号,再决定转给谁。"},
       {c:"        if \"M\" in data:",tip:"是编号→先存起来",why:"M开头是物料编号,存进M_number备用,这条还不急着发给认货大脑。"},
       {c:"            M_number=data"},
-      {c:"            tcpCliSock3.{{send}}(\"OK\".{{encode}}(\"utf-8\"))",tip:"回搬运工一声OK:编号收到",why:"上料(搬运工)正卡在while等'OK',这声让它去抓RFID。发字符串要encode。tcpCliSock3=上料端。"},
+      {c:"            tcpCliSock3.{{send}}(\"OK\".{{encode}}(\"utf-8\"))",tip:"回搬运工一声OK:编号收到",why:"上料(搬运工)正卡在while等'OK',这声让它去抓RFID。<em>发字符串要encode</em>。tcpCliSock3=<em>上料端</em>。"},
       {c:"        elif \"OK\" in data:"},
       {c:"            time.sleep(3)"},
-      {c:"            tcpCliSock2.{{send}}(M_number.{{encode}}(\"utf-8\"))",tip:"轮到了→把编号交给认货大脑",why:"收到OK节拍,等3秒稳一下,再把刚存的编号发给分类端配对识别。tcpCliSock2=分类端。"},
+      {c:"            tcpCliSock2.{{send}}(M_number.{{encode}}(\"utf-8\"))",tip:"轮到了→把编号交给认货大脑",why:"收到OK节拍,等3秒稳一下,再把刚存的编号发给分类端配对识别。tcpCliSock2=<em>分类端</em>。"},
       {c:"        # 否则，向视觉系统发送拍照指令"},
       {c:"        elif data ==\"GP2NG\":"},
       {c:"            tcpCliSock1.{{send}}(\"getphoto2\".{{encode}}(\"utf-8\"))",tip:"正面没拍好→喊质检员重拍",why:"GP2NG=拍正面失败,命质检员重新getphoto2。tcpCliSock1=视觉端自己。"},
@@ -286,7 +302,7 @@ const FILES = [
       {c:"    \"\"\"处理分类系统的通信线程函数\"\"\""},
       {c:"    while True:"},
       {c:"        # 接收分类系统发送的数据"},
-      {c:"        data = socket.{{recv}}(1024).{{decode}}('utf-8')",tip:"认货大脑报来种类名,接听",why:"收到的是种类名(如1.jqr),收数据必decode。下面靠它查下标定垛位。"},
+      {c:"        data = socket.{{recv}}(1024).{{decode}}('utf-8')",tip:"认货大脑报来种类名,接听",why:"收到的是<em>种类名(如1.jqr)</em>,收数据必decode。下面靠它查下标定垛位。"},
       {c:"        print(f\"{name}发送{data}\")"},
       {c:""},
       {c:"        # 获取物品在分类列表中的索引"},
@@ -330,8 +346,8 @@ const FILES = [
       {c:"        sum_add = sum(add_up)"},
       {c:"        if sum_add < 8:"},
       {c:"            # 通知上料系统和分类系统继续运行"},
-      {c:"            tcpCliSock3.{{send}}({{\"run\"}}.{{encode}}(\"utf-8\"))",tip:"敲节拍:催搬运工送下一件",why:"run是节拍信号,没满8件就喊上料继续。满8件不发=整线停。tcpCliSock3=上料端。"},
-      {c:"            tcpCliSock2.{{send}}({{\"run\"}}.{{encode}}(\"utf-8\"))",tip:"敲节拍:催认货大脑待命",why:"同一拍也通知分类端进入下一轮识别。tcpCliSock2=分类端。"},
+      {c:"            tcpCliSock3.{{send}}({{\"run\"}}.{{encode}}(\"utf-8\"))",tip:"敲节拍:催搬运工送下一件",why:"<em>run是节拍信号</em>,没满8件就喊上料继续。<em>满8件不发=整线停</em>。tcpCliSock3=上料端。"},
+      {c:"            tcpCliSock2.{{send}}({{\"run\"}}.{{encode}}(\"utf-8\"))",tip:"敲节拍:催认货大脑待命",why:"同一拍也通知分类端进入下一轮识别。tcpCliSock2=<em>分类端</em>。"},
       {c:""},
       {c:"        # 回到拍照点"},
       {c:"        dType.{{SetPTPCmdEx}}(api, 1, P1[0], P1[1], P1[2], P1[3], isQueued=1)",tip:"回到拍照点P1待命",why:"放完一件复位到起点,等下一件货的识别结果。"},
@@ -565,7 +581,7 @@ const FILES = [
       {c:"    # 设置夹爪状态"},
       {c:"    dType.{{SetEndEffectorGripper}}(api, air1, 1, isQueued=1)",tip:"按air1先摆好夹爪开/合",why:"到点前先定手势:抓料前张开。air1是入参传进来的。",warn:"骨架常漏此行,要补"},
       {c:"    # 移动到目标点上方20mm处"},
-      {c:"    dType.{{SetPTPCmdEx}}(api, 1, x, y, z + 50, r, isQueued=1)",tip:"先到目标正上方50mm",why:"门型运动先到高处对准。上料抬50mm(比下料20mm高),料盘高防撞。"},
+      {c:"    dType.{{SetPTPCmdEx}}(api, 1, x, y, z + 50, r, isQueued=1)",tip:"先到目标正上方50mm",why:"门型运动先到高处对准。上料抬<em>50mm(比下料20mm高)</em>,料盘高防撞。"},
       {c:"    # 下降到目标点"},
       {c:"    dType.{{SetPTPCmdEx}}(api, 1, x, y, z, r, isQueued=1)",tip:"竖直下到目标点",why:"对准后落到精确高度,准备夹或松。"},
       {c:"    # 设置夹爪新状态"},
@@ -615,7 +631,7 @@ const FILES = [
       {c:""},
       {c:"        dType.{{SetPTPCmdEx}}(api, 1, P3[0], P3[1], P2[2] + 60, P2[3], isQueued=1)#拍照回避",tip:"抬高让开,别挡读卡器拍照",why:"放到RFID位后抬高60mm躲开,免得手臂挡住读卡/拍照。"},
       {c:""},
-      {c:"        socket_client.{{send}}({{\"arrive1\"}}.{{encode}}('utf-8'))",tip:"报告:货到读卡器位了",why:"发arrive1告诉下料机,触发质检员拍编号。发数据必encode。",warn:"arrive1别写成arrive2"},
+      {c:"        socket_client.{{send}}({{\"arrive1\"}}.{{encode}}('utf-8'))",tip:"报告:货到读卡器位了",why:"发arrive1告诉下料机,触发质检员拍编号。发数据必encode。",warn:"<em>arrive1别写成arrive2!</em>"},
       {c:""},
       {c:""},
       {c:""},
@@ -768,6 +784,24 @@ let curFile = 0;
 let idx = 0;            // 当前行在 LINES 中的索引
 let combo = 0, maxCombo = 0, typed = 0, errs = 0;
 
+// 默写模式难度等级：每完成一遍同一文件 +1，提示逐渐减少
+// Lv0=全程灰字提示  Lv1=只提示首字母  Lv2=只提示长度占位  Lv3=纯默写无提示
+const LS_KEY = 'codedrill_recall_lv';
+function getLv(fi) {
+  try { return (JSON.parse(localStorage.getItem(LS_KEY) || '{}'))[fi] || 0; }
+  catch { return 0; }
+}
+function bumpLv(fi) {
+  try {
+    const o = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+    o[fi] = Math.min((o[fi] || 0) + 1, 3);
+    localStorage.setItem(LS_KEY, JSON.stringify(o));
+    return o[fi];
+  } catch { return 0; }
+}
+let recallLv = 0;       // 当前文件默写等级
+const LV_NAME = ['Lv0 全提示', 'Lv1 首字母', 'Lv2 长度', 'Lv3 纯默写'];
+
 const $ = id => document.getElementById(id);
 
 // 把文件展开成扁平行列表（含 _secStart 标记行）
@@ -896,11 +930,12 @@ function renderCurLine() {
 
   if (mode === 'recall') {
     const indent = (line.c.match(/^(\s*)/) || ['', ''])[1];
-    const body = line.c.slice(indent.length);
+    const body = plain(line.c).slice(indent.length);
     ct.innerHTML = indent.replace(/ /g, '&nbsp;') +
-      `<input class="blk" data-full="1" data-ans="${esc(plain(body))}" style="min-width:${Math.max(plain(body).length * 8.5, 80)}px;text-align:left" autocomplete="off" spellcheck="false">`;
-    bindBlanks();
-    setTerm(line, '默写：整行自己敲');
+      `<span class="rcl" id="rcl" data-ans="${esc(body)}" data-lv="${recallLv}" contenteditable="false"></span>` +
+      `<span class="rc-caret" id="rc-caret"></span>`;
+    bindRecall(body);
+    setTerm(line, `默写 <span class="lvbadge">${LV_NAME[recallLv]}</span>&nbsp;逐字敲，Tab 接受补全`);
     return;
   }
   // 挖空 / 跟写
@@ -942,6 +977,89 @@ function bindBlanks() {
       }
     });
   });
+}
+
+/* ── 默写模式：inline 逐字补全 ── */
+function bindRecall(answer) {
+  const el = $('rcl');
+  const caret = $('rc-caret');
+  if (!el) return;
+  let pos = 0;          // 已正确输入的字符数
+  const lv = recallLv;
+
+  function ghostFor(ch, i) {
+    // 根据等级决定剩余部分怎么提示
+    if (lv === 0) return ch;                                   // 全字提示
+    if (lv === 1) {
+      // 只在“单词首字母”给提示，其余用·占位
+      const prev = i === 0 ? ' ' : answer[i - 1];
+      return /\W/.test(prev) ? ch : (ch === ' ' ? ' ' : '·');
+    }
+    if (lv === 2) return ch === ' ' ? ' ' : '·';               // 仅长度占位
+    return '';                                                  // Lv3 纯默写
+  }
+
+  function paint() {
+    let html = '';
+    for (let i = 0; i < answer.length; i++) {
+      const ch = esc(answer[i]);
+      if (i < pos) html += `<span class="rc-typed">${ch}</span>`;
+      else {
+        const g = ghostFor(answer[i], i);
+        if (g === '') html += '';
+        else html += `<span class="${lv >= 2 ? 'rc-hidden' : 'rc-ghost'}">${esc(g)}</span>`;
+      }
+    }
+    el.innerHTML = html;
+    // caret 跟随
+  }
+  paint();
+
+  function accept(text) {
+    // 尝试把 text 逐字匹配到 answer 剩余部分
+    for (const c of text) {
+      if (answer[pos] === c) pos++;
+      else { wrong(); return; }
+    }
+    paint();
+    if (pos >= answer.length) done();
+  }
+  function wrong() {
+    el.classList.add('shakeit');
+    combo = 0; updateHUD();
+    setTimeout(() => el.classList.remove('shakeit'), 220);
+  }
+  function done() {
+    lockLine();
+  }
+
+  // 用一个隐藏的可聚焦区接收键盘
+  const handler = e => {
+    if (idx >= LINES.length) return;
+    if (mode !== 'recall') { document.removeEventListener('keydown', handler); return; }
+    if (e.key === 'Enter') { e.preventDefault();
+      // Enter = 自动补全整行剩余（视为放弃本行默写，但仍前进）
+      if (pos >= answer.length) { done(); }
+      else { // 补完剩余并标记
+        pos = answer.length; paint(); errs++; combo = 0; updateHUD(); setTimeout(done, 120);
+      }
+      return;
+    }
+    if (e.key === 'Tab') { e.preventDefault();
+      // Tab = 接受下一个 token（到下一个空格或符号边界）
+      let end = pos;
+      while (end < answer.length && /\w/.test(answer[end])) end++;
+      if (end === pos && end < answer.length) end = pos + 1; // 至少前进一个符号
+      pos = end; paint(); if (pos >= answer.length) done();
+      return;
+    }
+    if (e.key === 'Backspace') { e.preventDefault(); if (pos > 0) pos--; paint(); return; }
+    if (e.key.length === 1) { e.preventDefault(); accept(e.key); }
+  };
+  // 卸载上一个监听，挂新的
+  if (window._recallHandler) document.removeEventListener('keydown', window._recallHandler);
+  window._recallHandler = handler;
+  document.addEventListener('keydown', handler);
 }
 
 function submitLine(blanks) {
@@ -1010,15 +1128,26 @@ function flash(msg) {
 
 /* ── 文件完成 ── */
 function finishFile() {
+  // 清理默写键盘监听
+  if (window._recallHandler) { document.removeEventListener('keydown', window._recallHandler); window._recallHandler = null; }
   render();
   const f = FILES[curFile];
   $('term').innerHTML = `<div class="sysl">$ python ${f.name.split('/').pop()}</div>` +
     (f.run || '完成').split('\n').map(l => `<div class="sysl">${esc(l)}</div>`).join('');
-  setTimeout(showEnd, 700);
+  // 默写模式：完成一遍 → 该文件等级 +1，下次提示更少
+  let leveledTo = null;
+  if (mode === 'recall') { leveledTo = bumpLv(curFile); }
+  setTimeout(() => showEnd(leveledTo), 700);
 }
-function showEnd() {
+function showEnd(leveledTo) {
   const last = curFile >= FILES.length - 1;
   const acc = typed ? Math.round((typed - errs) / typed * 100) : 100;
+  let lvMsg = '';
+  if (leveledTo != null) {
+    lvMsg = leveledTo >= 3
+      ? `<p style="color:var(--green)">默写已达 ${LV_NAME[3]}！你已能脱稿写出整份代码。</p>`
+      : `<p style="color:var(--peach)">默写难度提升 → 下次进入为 <b>${LV_NAME[leveledTo]}</b>，提示更少。</p>`;
+  }
   $('endScreen').innerHTML = `
     <div class="big">${last ? '🏆' : '✅'}</div>
     <h1>${FILES[curFile].name.split('/').pop()} 完成！</h1>
@@ -1027,16 +1156,27 @@ function showEnd() {
       <div><div class="n">${maxCombo}</div><div class="l">最高连击</div></div>
       <div><div class="n">${acc}%</div><div class="l">准确率</div></div>
     </div>
-    <p>${last ? '三个文件全部完成！可切「默写」模式重练。' : '继续下一个文件。'}</p>
-    <div>${last ? '' : `<button onclick="nextFile()">下一文件 ▶</button>`}
-      <button class="ghost" onclick="retryFile()">重写本文件</button></div>`;
+    ${lvMsg}
+    <p>${last ? '三个文件全部完成！切「默写」模式逐级提高难度。' : '继续下一个文件。'}</p>
+    <div>
+      <button onclick="recallAgain()">🔁 默写再练一遍</button>
+      ${last ? '' : `<button class="ghost" onclick="nextFile()">下一文件 ▶</button>`}
+      <button class="ghost" onclick="retryFile()">重写本文件</button>
+    </div>`;
   $('endScreen').classList.remove('hidden');
+}
+function recallAgain() {
+  mode = 'recall';
+  [...$('modesw').children].forEach(b => b.classList.toggle('on', b.dataset.m === 'recall'));
+  resetFile();
 }
 
 /* ── 控制 ── */
 function resetFile() {
+  if (window._recallHandler) { document.removeEventListener('keydown', window._recallHandler); window._recallHandler = null; }
   LINES = buildLines(curFile);
   idx = 0; combo = 0; maxCombo = 0; typed = 0; errs = 0;
+  recallLv = getLv(curFile);     // 载入该文件已达到的默写等级
   $('endScreen').classList.add('hidden');
   renderTabs(); renderTree();
   fastForward();   // 直接跳到第一个要输入的行
