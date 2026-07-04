@@ -24,7 +24,8 @@ function switchTab(tab) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-item').forEach(i => i.classList.remove('active'));
   $('page-' + tab).classList.add('active');
-  document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+  const navItem = document.querySelector(`[data-tab="${tab}"]`);
+  if (navItem) navItem.classList.add('active');
   if (tab === 'home') renderHome();
   if (tab === 'study') renderStudy();
   if (tab === 'cheat') renderCheat();

@@ -21,6 +21,8 @@ const MODULES = [
     desc:'修缩进bug、补TCP连接、predict识别、读RFID、发种类给下料机' },
   { key:'rfid',  icon:'🏷️', name:'RFID 与文件拷贝', diff:1,
     desc:'现场缺3个文件要拷贝！read_card_text读json、get_decoded_text' },
+  { key:'vision', icon:'📷', name:'视觉模块（DobotVisionStudio）', diff:2,
+    desc:'TCP第一个客户端(sock1)；收getphoto1/2触发拍照；读M编号；存img.bmp给分类用' },
 ];
 
 const QUESTIONS = [
@@ -38,7 +40,7 @@ const QUESTIONS = [
  answer:'115200 ; 0',
  memory:'波特率永远 <b>115200</b>；返回是元组，<b>[0]</b> 才是状态码。',
  why:'ConnectDobot 返回 (状态码, ...)。115200 是 Dobot 固定串口速率，写错连不上。',
- params:'COM口现场必改！下料案例=COM6，上料现场=COM5，以设备管理器实际为准。'},
+ params:'COM口现场必改！下料案例=COM6，上料案例=COM16，以设备管理器实际为准。'},
 
 {id:103,mod:'conn',level:'L1',type:'fill',
  prompt:'用状态码当索引，打印中文连接状态：',
@@ -223,13 +225,20 @@ const QUESTIONS = [
  memory:'<b>开带→轮询传感器→i[0]==1停带→发arrive2</b>。',
  why:'传送带把料送到末端，光电传感器i[0]=1说明料到位，立刻停带防止冲出，再通知下料机。'},
 
+{id:505,mod:'tcp_c',level:'L3',type:'write',
+ prompt:'【默写】上料机码垛取料算法：按50mm间距算抓取点P4，y方向每件偏移50，一列放4件后换列。',
+ answer:'P4[1] = (P1[1] - (y * 50))\nP4[0] = (P1[0] - (x * 50))\nif y < 3:\n    y += 1\nelse:\n    y = 0\n    x = 1',
+ memory:'<b>P4=P1偏移；y每件-50；y满3换列(y归0,x=1)</b>。',
+ why:'码垛区一列4件(y=0~3)，每件Y方向-50mm；放满一列后y归零、x切到第二列。P4存算出的抓取坐标交给move。',
+ params:'P1是码垛起点(抓取基准点)，现场示教得到；50是料间距。'},
+
 /* ============ 模块6：深度学习分类 (cls) ============ */
 {id:601,mod:'cls',level:'L2',type:'choice',
- prompt:'现场版 main.py 有个致命bug，是什么？',
+ prompt:'【考卷推测点】若现场版 main.py 被埋了bug，最可能是哪种？（注：案例程序本身缩进是正确的）',
  options:['import写错了','if result==0 缩进跑到while循环外面，永远执行不到','predict函数名错','少了cv2'],
  answer:'B',
- memory:'现场版 <b>if 缩进错位</b>，掉出了while。',
- why:'代码里 if result==0 顶格写，脱离了while循环体。必须缩进回while内部。这是故意埋的改错点。'},
+ memory:'案例版缩进<b>正确</b>；考卷常见埋法是把 <b>if 缩进移出 while</b>，记住怎么修回来。',
+ why:'案例程序 main.py 里 if result==0:continue 缩进本身没问题。但比赛"考卷版"可能故意把它顶格写脱离while。遇到就缩进回while内部。属于推测考点，不是案例既有bug。'},
 
 {id:602,mod:'cls',level:'L1',type:'fill',
  prompt:'分类程序连接下料机服务端：',
@@ -259,12 +268,12 @@ const QUESTIONS = [
 
 /* ============ 模块7：RFID与文件拷贝 (rfid) ============ */
 {id:701,mod:'rfid',level:'L2',type:'choice',
- prompt:'现场版"深度学习分类"文件夹缺失哪些文件，需要从RFID64bit拷过来？',
+ prompt:'【考卷推测点】若分类程序import报错，通常需要从RFID64bit补哪些文件到"深度学习分类"？（注：案例程序里这3个文件已存在）',
  options:['DobotDllType.py','RFID.py、read_card_text.py、comPro64.dll','ResNet.py','train.py'],
  answer:'B',
- memory:'缺3个：<b>RFID.py + read_card_text.py + comPro64.dll</b>。',
- why:'main.py 里 import 了 read_card_text，且RFID读卡依赖comPro64.dll。不拷进来分类程序import就报错。',
- params:'现场第一步操作：从 RFID64bit/ 复制这3个文件到 深度学习分类/。'},
+ memory:'分类依赖这3个：<b>RFID.py + read_card_text.py + comPro64.dll</b>。',
+ why:'main.py import 了 read_card_text，读卡又依赖 comPro64.dll。案例程序的分类目录里这3个文件其实已带。但若考卷版被删，import会报错，需从 RFID64bit/ 拷回。属推测考点。',
+ params:'若考卷分类目录缺这3个文件：从 RFID64bit/ 复制到 深度学习分类/。'},
 
 {id:702,mod:'rfid',level:'L1',type:'fill',
  prompt:'从分类main导入RFID解码文本的函数：',
@@ -285,6 +294,40 @@ const QUESTIONS = [
  answer:'1 ; FFFFFFFFFFFF',
  memory:'读<b>块1</b>，默认密钥 <b>12个F</b>（出厂默认）。',
  why:'数据写在块1(属扇区0)，MIFARE卡出厂密钥全FF。这俩参数一般不用改。'},
+
+/* ============ 模块8：视觉系统 (vision) ============ */
+{id:801,mod:'vision',level:'L1',type:'choice',
+ prompt:'视觉系统作为第几个客户端连接到下料机服务端？',
+ options:['第1个(tcpCliSock1)','第2个(tcpCliSock2)','第3个(tcpCliSock3)','不连TCP'],
+ answer:'A',
+ memory:'视觉是 <b>第1个客户端(sock1)</b>，accept顺序：视觉→分类→上料。',
+ why:'下料机Main.py里accept顺序写死：先连的是视觉，分配给tcpCliSock1和vision()线程。启动也必须是 下料→视觉→分类→上料。'},
+
+{id:802,mod:'vision',level:'L1',type:'fill',
+ prompt:'下料机发送拍照指令给视觉的两个信号词：',
+ code:'拍RFID面/读编号: "________"\n拍物料本体存img: "________"',
+ answer:'getphoto1 ; getphoto2',
+ memory:'<b>getphoto1</b>=拍编号(RFID面)，<b>getphoto2</b>=拍本体(存img.bmp)。',
+ why:'arrive1触发getphoto1读出M00X编号；arrive2触发getphoto2存分类要用的img.bmp。信号词定义在下料机vision()线程里。'},
+
+{id:803,mod:'vision',level:'L2',type:'judge',
+ prompt:'判断：视觉拍照后保存的图片文件名是"img.bmp"，分类程序会读这个文件做predict。',
+ answer:'对',
+ memory:'视觉存 <b>img.bmp</b> → 分类 <b>cv2.imread("./img.bmp")</b> → predict。',
+ why:'这是两个程序的约定：视觉把物料本体图存为固定路径 ./img.bmp，分类程序收到含M的信号后读这个文件推理。'},
+
+{id:804,mod:'vision',level:'L2',type:'choice',
+ prompt:'视觉识别出物料编号后（如"M003"），把它发给谁？',
+ options:['直接发给分类系统','发给下料机，下料机转发给分类','发给上料机','存到文件里'],
+ answer:'B',
+ memory:'视觉识别M编号 → 发给<b>下料机</b> → 下料机转发给<b>分类</b>。',
+ why:'信号流：视觉发M00X给下料机vision()→存M_number→下料机回OK→等3秒→发给分类tcpCliSock2。经过下料机中转。'},
+
+{id:805,mod:'vision',level:'L3',type:'write',
+ prompt:'【知识卡】DobotVisionStudio现场操作要点（非代码题）：写出3个关键配置项。',
+ answer:'1.TCP通信模块：客户端模式，连127.0.0.1:8081\n2.拍照流程：收getphoto1读编号M00X，收getphoto2拍本体存img.bmp\n3.硬件：USB插3.0蓝口；调焦清晰；每改参数另存新文件防崩溃',
+ memory:'<b>TCP客户端→拍照流程→USB3.0/调焦/另存</b>。',
+ why:'视觉是用DobotVisionStudio图形化软件配置，不是写Python代码。现场要在软件里设TCP连8081、配置拍照触发信号getphoto1/2、确认相机出图清晰。'},
 ];
 
 /* 各模块讲解文章 */
@@ -332,6 +375,14 @@ rfid:`<div class="article"><h3>这块在干嘛</h3>
 <pre class="code">code = get_decoded_text()
 sp_code1 = code.split(";")[0]  # 产地
 sp_code2 = code.split(";")[1]  # 时间</pre></div>`,
+vision:`<div class="article"><h3>这块在干嘛</h3>
+<p>视觉用 <span class="k">DobotVisionStudio（多功能机器视觉软件3.1.6）</span> 图形化配置，<b>不写Python代码</b>。工程文件 <code>40307.poj</code>。它是TCP <b>第1个客户端</b>(sock1)。</p>
+<pre class="code">收 getphoto1 → 拍RFID面,读编号M00X → 发给下料机
+收 getphoto2 → 拍物料本体 → 存 ./img.bmp(给分类predict)</pre>
+<h3>信号流里的位置</h3>
+<p>上料到位发arrive1→下料让视觉getphoto1读编号→视觉发M00X给下料机→下料回OK→传送带到位arrive2→下料让视觉getphoto2存img.bmp。</p>
+<div class="warn">USB必须插<b>3.0蓝口</b>否则无图/卡顿；改参数<b>另存新文件名</b>防崩溃丢进度。</div>
+<div class="tip">启动顺序：下料(服务端)→<b>视觉</b>→分类→上料。视觉必须第2个起。</div></div>`,
 };
 
 /* 速查卡 */
@@ -349,7 +400,7 @@ const CHEAT = `
 <div class="warn">顺序错=accept错位=全乱。下料机必须第一个。</div></div>
 <div class="article"><h3>⚙️ 必改参数表</h3>
 <table class="tbl"><tr><th>参数</th><th>位置</th><th>说明</th></tr>
-<tr><td>COM口</td><td>各Main.py连接行</td><td>设备管理器实际值,下料常COM6,上料COM5</td></tr>
+<tr><td>COM口</td><td>各Main.py连接行</td><td>设备管理器实际值,下料案例默认COM6,上料案例默认COM16</td></tr>
 <tr><td>sampleClss</td><td>下料机</td><td>4个标签=模型类别名,一字不差</td></tr>
 <tr><td>P点坐标</td><td>各Main.py</td><td>示教得到,抓取/放置/拍照点</td></tr>
 <tr><td>传感器第3参</td><td>SetInfraredSensor</td><td>下料=2,上料=1</td></tr>
